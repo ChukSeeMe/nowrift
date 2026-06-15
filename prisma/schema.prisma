@@ -1,0 +1,1189 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+datasource db {
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  extensions = [pgcrypto, pg_trgm, citext]
+}
+
+enum UserStatus {
+  active
+  suspended
+  pending_verification
+  deleted
+
+  @@map("user_status")
+}
+
+enum RoleName {
+  visitor
+  contributor
+  editor
+  senior_editor
+  admin
+  super_admin
+
+  @@map("role_name")
+}
+
+enum ArticleStatus {
+  draft
+  in_review
+  approved
+  published
+  retracted
+  archived
+
+  @@map("article_status")
+}
+
+enum ImageProvider {
+  source_og
+  unsplash
+  fal_ai
+  css_fallback
+  manual_upload
+
+  @@map("image_provider")
+}
+
+enum AgentName {
+  scraper
+  synthesiser
+  image_fetcher
+  publisher
+  social_poster
+  seo_agent
+  grant_monitor
+  social_monitor
+  social_replier
+  social_community
+  social_trend
+  social_strategy
+
+  @@map("agent_name")
+}
+
+enum AgentStatus {
+  queued
+  running
+  completed
+  failed
+  retrying
+  cancelled
+
+  @@map("agent_status")
+}
+
+enum JobPriority {
+  low
+  normal
+  high
+  critical
+
+  @@map("job_priority")
+}
+
+enum SocialPlatform {
+  x
+  linkedin
+  threads
+
+  @@map("social_platform")
+}
+
+enum SocialPostStatus {
+  draft
+  scored
+  scheduled
+  posted
+  failed
+  cancelled
+
+  @@map("social_post_status")
+}
+
+enum SocialPostFormat {
+  hook_text
+  thread
+  document
+  question
+  trend
+  news_card
+  grant_alert
+  community_reply
+
+  @@map("social_post_format")
+}
+
+enum GrantStatus {
+  open
+  closing_soon
+  closed
+  awarded
+  cancelled
+  draft
+
+  @@map("grant_status")
+}
+
+enum GrantChangeType {
+  deadline_extended
+  deadline_shortened
+  amount_increased
+  amount_decreased
+  new_criteria
+  status_changed
+  new_round
+  description_updated
+  new_grant
+
+  @@map("grant_change_type")
+}
+
+enum AlertFrequency {
+  instant
+  daily
+  weekly
+
+  @@map("alert_frequency")
+}
+
+enum AlertType {
+  new_grant
+  deadline_14_days
+  deadline_48_hours
+  grant_changed
+  grant_awarded
+
+  @@map("alert_type")
+}
+
+enum AlertDeliveryStatus {
+  pending
+  sent
+  failed
+  suppressed
+
+  @@map("alert_delivery_status")
+}
+
+enum SubscriberStatus {
+  active
+  unsubscribed
+  bounced
+  complained
+  pending
+
+  @@map("subscriber_status")
+}
+
+enum IssueStatus {
+  draft
+  scheduled
+  sending
+  sent
+  cancelled
+
+  @@map("issue_status")
+}
+
+enum SponsorStatus {
+  prospect
+  active
+  paused
+  churned
+
+  @@map("sponsor_status")
+}
+
+enum PaymentStatus {
+  pending
+  invoiced
+  paid
+  overdue
+  cancelled
+
+  @@map("payment_status")
+}
+
+enum AuditAction {
+  article_created             @map("article.created")
+  article_submitted           @map("article.submitted")
+  article_approved            @map("article.approved")
+  article_published           @map("article.published")
+  article_retracted           @map("article.retracted")
+  article_deleted             @map("article.deleted")
+  user_created                @map("user.created")
+  user_suspended              @map("user.suspended")
+  user_role_changed           @map("user.role_changed")
+  user_password_changed       @map("user.password_changed")
+  user_totp_enabled           @map("user.totp_enabled")
+  user_totp_disabled          @map("user.totp_disabled")
+  admin_config_changed        @map("admin.config_changed")
+  grant_created               @map("grant.created")
+  grant_published             @map("grant.published")
+  grant_status_changed        @map("grant.status_changed")
+  sponsor_created             @map("sponsor.created")
+  sponsor_payment_received    @map("sponsor.payment_received")
+  agent_config_changed        @map("agent.config_changed")
+  token_revoked               @map("token.revoked")
+
+  @@map("audit_action")
+}
+
+model User {
+  id                    String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email                 String             @unique @db.Citext
+  password_hash         String
+  display_name          String?            @db.VarChar(100)
+  avatar_url            String?
+  status                UserStatus         @default(pending_verification)
+  totp_enabled          Boolean            @default(false)
+  totp_secret           String?
+  failed_login_attempts Int                @default(0)
+  locked_until          DateTime?          @db.Timestamptz
+  last_login_at         DateTime?          @db.Timestamptz
+  last_login_ip         String?            @db.Inet
+  created_at            DateTime           @default(now()) @db.Timestamptz
+  updated_at            DateTime           @default(now()) @db.Timestamptz
+
+  // Relations
+  user_roles            UserRole[]         @relation("UserRoles")
+  assigned_roles        UserRole[]         @relation("AssignedBy")
+  invite_tokens_created InviteToken[]      @relation("CreatedBy")
+  invite_tokens_used    InviteToken[]      @relation("UsedBy")
+  refresh_tokens        RefreshToken[]
+  totp_recovery_codes   TotpRecoveryCode[]
+  articles_created      Article[]          @relation("CreatedBy")
+  articles_approved     Article[]          @relation("ApprovedBy")
+  articles_retracted    Article[]          @relation("RetractedBy")
+  content_reports       ContentReport[]    @relation("ReportedBy")
+  content_resolutions   ContentReport[]    @relation("ResolvedBy")
+  agent_configs_updated AgentConfig[]
+  sponsors_created      Sponsor[]
+  audit_logs            AuditLog[]
+  login_attempts        LoginAttempt[]
+  rate_limit_events     RateLimitEvent[]
+  blocked_ips           IpBlocklist[]
+  admin_sessions        AdminSession[]
+  grants_created        Grant[]            @relation("GrantsCreatedBy")
+  grants_published      Grant[]            @relation("GrantsPublishedBy")
+  newsletter_issues     NewsletterIssue[]
+
+  @@map("users")
+}
+
+model Role {
+  id              String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name            RoleName    @unique
+  description     String
+  permissions     Json        @default("[]")
+  hierarchy_level Int
+  created_at      DateTime    @default(now()) @db.Timestamptz
+
+  // Relations
+  user_roles      UserRole[]
+  invite_tokens   InviteToken[]
+
+  @@map("roles")
+}
+
+model UserRole {
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id     String    @db.Uuid
+  role_id     String    @db.Uuid
+  assigned_by String?   @db.Uuid
+  assigned_at DateTime  @default(now()) @db.Timestamptz
+  expires_at  DateTime? @db.Timestamptz
+  notes       String?
+
+  // Relations
+  user        User      @relation("UserRoles", fields: [user_id], references: [id], onDelete: Cascade)
+  role        Role      @relation(fields: [role_id], references: [id], onDelete: Restrict)
+  assigner    User?     @relation("AssignedBy", fields: [assigned_by], references: [id], onDelete: SetNull)
+
+  @@unique([user_id, role_id])
+  @@map("user_roles")
+}
+
+model InviteToken {
+  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  token      String    @unique @default(dbgenerated("encode(gen_random_bytes(32), 'hex')"))
+  email      String    @db.Citext
+  role_id    String    @db.Uuid
+  created_by String    @db.Uuid
+  used       Boolean   @default(false)
+  used_at    DateTime? @db.Timestamptz
+  used_by    String?   @db.Uuid
+  expires_at DateTime  @default(dbgenerated("(now() + '7 days'::interval)")) @db.Timestamptz
+  created_at DateTime  @default(now()) @db.Timestamptz
+
+  // Relations
+  role      Role  @relation(fields: [role_id], references: [id], onDelete: Restrict)
+  creator   User  @relation("CreatedBy", fields: [created_by], references: [id], onDelete: Cascade)
+  user_used User? @relation("UsedBy", fields: [used_by], references: [id], onDelete: SetNull)
+
+  @@map("invite_tokens")
+}
+
+model RefreshToken {
+  id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id        String    @db.Uuid
+  token_hash     String    @unique
+  ip_address     String?   @db.Inet
+  user_agent     String?
+  revoked        Boolean   @default(false)
+  revoked_at     DateTime? @db.Timestamptz
+  revoked_reason String?
+  expires_at     DateTime  @default(dbgenerated("(now() + '7 days'::interval)")) @db.Timestamptz
+  created_at     DateTime  @default(now()) @db.Timestamptz
+
+  // Relations
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@map("refresh_tokens")
+}
+
+model TotpRecoveryCode {
+  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id    String    @db.Uuid
+  code_hash  String
+  used       Boolean   @default(false)
+  used_at    DateTime? @db.Timestamptz
+  created_at DateTime  @default(now()) @db.Timestamptz
+
+  // Relations
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@map("totp_recovery_codes")
+}
+
+model Channel {
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name        String    @unique @db.VarChar(100)
+  slug        String    @unique @db.VarChar(100)
+  description String?
+  color_hex   String    @default("#FF3D3D") @db.VarChar(7)
+  icon_name   String?   @db.VarChar(100)
+  is_active   Boolean   @default(true)
+  sort_order  Int       @default(0)
+  created_at  DateTime  @default(now()) @db.Timestamptz
+
+  // Relations
+  articles Article[]
+
+  @@map("channels")
+}
+
+model Source {
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name            String   @db.VarChar(200)
+  rss_url         String?  @unique
+  domain          String   @unique @db.VarChar(255)
+  homepage_url    String?
+  trust_score     Int      @default(70)
+  is_active       Boolean  @default(true)
+  check_frequency String   @default("every_2h") @db.VarChar(20)
+  last_checked_at DateTime? @db.Timestamptz
+  last_item_at    DateTime? @db.Timestamptz
+  total_items     Int      @default(0)
+  geo_region      String   @default("global") @db.VarChar(50)
+  notes           String?
+  created_at      DateTime @default(now()) @db.Timestamptz
+  updated_at      DateTime @default(now()) @db.Timestamptz
+
+  // Relations
+  article_sources ArticleSource[]
+  scrape_queue    ScrapeQueue[]
+
+  @@map("sources")
+}
+
+model Article {
+  id                 String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  slug               String        @unique @db.VarChar(500)
+  headline           String
+  deck               String?
+  body_html          String?
+  so_what_dev        String?
+  so_what_security   String?
+  so_what_founders   String?
+  so_what_creators   String?
+  so_what_data       String?
+  status             ArticleStatus @default(draft)
+  is_breaking        Boolean       @default(false)
+  is_featured        Boolean       @default(false)
+  relevance_score    Float?
+  ai_model_used      String?       @db.VarChar(100)
+  synthesis_cost_usd Decimal       @default(0) @db.Decimal(10, 6)
+  channel_id         String?       @db.Uuid
+  created_by         String?       @db.Uuid
+  approved_by        String?       @db.Uuid
+  retracted_by       String?       @db.Uuid
+  meta_title         String?       @db.VarChar(70)
+  meta_description   String?       @db.VarChar(160)
+  og_image_url       String?
+  canonical_url      String?
+  json_ld            Json?
+  view_count         Int           @default(0)
+  share_count        Int           @default(0)
+  published_at       DateTime?     @db.Timestamptz
+  retracted_at       DateTime?     @db.Timestamptz
+  created_at         DateTime      @default(now()) @db.Timestamptz
+  updated_at         DateTime      @default(now()) @db.Timestamptz
+
+  // Relations
+  channel        Channel?          @relation(fields: [channel_id], references: [id], onDelete: SetNull)
+  creator        User?             @relation("CreatedBy", fields: [created_by], references: [id], onDelete: SetNull)
+  approver       User?             @relation("ApprovedBy", fields: [approved_by], references: [id], onDelete: SetNull)
+  retractor      User?             @relation("RetractedBy", fields: [retracted_by], references: [id], onDelete: SetNull)
+  sources        ArticleSource[]
+  audit_record   AigenAuditRecord?
+  tags           ArticleTag[]
+  images         ArticleImage[]
+  scrape_queue   ScrapeQueue[]
+  content_reports ContentReport[]
+  synthesis_jobs SynthesisJob[]
+  social_posts   SocialPost[]
+  issue_articles IssueArticle[]
+
+  @@map("articles")
+}
+
+model ArticleSource {
+  id               String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  article_id       String   @db.Uuid
+  source_id        String?  @db.Uuid
+  source_url       String
+  source_title     String?
+  source_domain    String?  @db.VarChar(255)
+  similarity_score Float?
+  was_primary      Boolean  @default(false)
+  scraped_at       DateTime @default(now()) @db.Timestamptz
+
+  // Relations
+  article Article @relation(fields: [article_id], references: [id], onDelete: Cascade)
+  source  Source? @relation(fields: [source_id], references: [id], onDelete: SetNull)
+
+  @@map("article_sources")
+}
+
+model AigenAuditRecord {
+  id                   String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  article_id           String    @unique @db.Uuid
+  model_used           String    @db.VarChar(100)
+  synthesis_prompt_hash String?
+  source_count         Int       @default(0)
+  source_urls          Json      @default("[]")
+  max_similarity_score Float     @default(0)
+  copyright_passed     Boolean   @default(false)
+  compliance_notes     String?
+  r2_audit_path        String?
+  ingested_at          DateTime  @default(now()) @db.Timestamptz
+  published_at         DateTime? @db.Timestamptz
+
+  // Relations
+  article Article @relation(fields: [article_id], references: [id], onDelete: Cascade)
+
+  @@map("aigen_audit_records")
+}
+
+model Tag {
+  id          String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name        String       @unique @db.VarChar(100)
+  slug        String       @unique @db.VarChar(100)
+  usage_count Int          @default(0)
+  created_at  DateTime     @default(now()) @db.Timestamptz
+
+  // Relations
+  articles ArticleTag[]
+
+  @@map("tags")
+}
+
+model ArticleTag {
+  article_id String @db.Uuid
+  tag_id     String @db.Uuid
+
+  // Relations
+  article Article @relation(fields: [article_id], references: [id], onDelete: Cascade)
+  tag     Tag     @relation(fields: [tag_id], references: [id], onDelete: Cascade)
+
+  @@id([article_id, tag_id])
+  @@map("article_tags")
+}
+
+model ArticleImage {
+  id              String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  article_id      String        @db.Uuid
+  image_url       String
+  image_type      String        @default("card") @db.VarChar(20)
+  provider        ImageProvider @default(source_og)
+  alt_text        String?
+  attribution     String?
+  width           Int?
+  height          Int?
+  file_size_bytes Int?
+  is_verified     Boolean       @default(false)
+  verified_at     DateTime?     @db.Timestamptz
+  r2_path         String?
+  created_at      DateTime      @default(now()) @db.Timestamptz
+
+  // Relations
+  article Article @relation(fields: [article_id], references: [id], onDelete: Cascade)
+
+  @@map("article_images")
+}
+
+model ScrapeQueue {
+  id              String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  url             String    @unique
+  source_id       String?   @db.Uuid
+  source_name     String?   @db.VarChar(200)
+  raw_title       String?
+  raw_excerpt     String?
+  raw_og_image    String?
+  status          String    @default("pending") @db.VarChar(20)
+  relevance_score Float?
+  rejection_reason String?
+  retry_count     Int       @default(0)
+  agent_run_id    String?   @db.Uuid
+  article_id      String?   @db.Uuid
+  scraped_at      DateTime  @default(now()) @db.Timestamptz
+  processed_at    DateTime? @db.Timestamptz
+
+  // Relations
+  source  Source?  @relation(fields: [source_id], references: [id], onDelete: SetNull)
+  article Article? @relation(fields: [article_id], references: [id], onDelete: SetNull)
+
+  @@map("scrape_queue")
+}
+
+model ContentReport {
+  id              String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  article_id      String    @db.Uuid
+  reported_by     String?   @db.Uuid
+  reporter_email  String?   @db.Citext
+  reason          String    @db.VarChar(100)
+  description     String?
+  status          String    @default("open") @db.VarChar(20)
+  resolved_by     String?   @db.Uuid
+  resolution_note String?
+  created_at      DateTime  @default(now()) @db.Timestamptz
+  resolved_at     DateTime? @db.Timestamptz
+
+  // Relations
+  article  Article @relation(fields: [article_id], references: [id], onDelete: Cascade)
+  reporter User?   @relation("ReportedBy", fields: [reported_by], references: [id], onDelete: SetNull)
+  resolver User?   @relation("ResolvedBy", fields: [resolved_by], references: [id], onDelete: SetNull)
+
+  @@map("content_reports")
+}
+
+model AgentConfig {
+  id              String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  agent_name      AgentName @unique
+  is_enabled      Boolean   @default(true)
+  config          Json      @default("{}")
+  cron_expression String?   @db.VarChar(100)
+  last_updated_by String?   @db.Uuid
+  updated_at      DateTime  @default(now()) @db.Timestamptz
+
+  // Relations
+  updater User? @relation(fields: [last_updated_by], references: [id], onDelete: SetNull)
+
+  @@map("agent_config")
+}
+
+model AgentRun {
+  id              String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  agent_name      AgentName
+  status          AgentStatus  @default(queued)
+  priority        JobPriority  @default(normal)
+  triggered_by    String       @default("cron") @db.VarChar(50)
+  items_processed Int          @default(0)
+  items_succeeded Int          @default(0)
+  items_failed    Int          @default(0)
+  input_tokens    Int          @default(0)
+  output_tokens   Int          @default(0)
+  cost_usd        Decimal      @default(0) @db.Decimal(10, 6)
+  error_message   String?
+  error_stack     String?
+  metadata        Json         @default("{}")
+  started_at      DateTime?    @db.Timestamptz
+  completed_at    DateTime?    @db.Timestamptz
+  created_at      DateTime     @default(now()) @db.Timestamptz
+
+  // Relations
+  synthesis_jobs SynthesisJob[]
+  social_posts   SocialPost[]
+  grant_changes  GrantChange[]
+
+  @@map("agent_runs")
+}
+
+model SynthesisJob {
+  id                   String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  article_id           String?   @db.Uuid
+  agent_run_id         String?   @db.Uuid
+  model_used           String    @db.VarChar(100)
+  prompt_version       String    @default("v1") @db.VarChar(20)
+  input_tokens         Int       @default(0)
+  output_tokens        Int       @default(0)
+  cost_usd             Decimal   @default(0) @db.Decimal(10, 6)
+  max_similarity_score Float     @default(0)
+  source_count         Int       @default(0)
+  source_urls          Json      @default("[]")
+  status               String    @default("pending") @db.VarChar(20)
+  rejection_reason     String?
+  duration_ms          Int?
+  created_at           DateTime  @default(now()) @db.Timestamptz
+
+  // Relations
+  article   Article?  @relation(fields: [article_id], references: [id], onDelete: Cascade)
+  agent_run AgentRun? @relation(fields: [agent_run_id], references: [id], onDelete: SetNull)
+
+  @@map("synthesis_jobs")
+}
+
+model SocialPost {
+  id                String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  article_id        String?          @db.Uuid
+  grant_id          String?          @db.Uuid
+  agent_run_id      String?          @db.Uuid
+  platform          SocialPlatform
+  format            SocialPostFormat @default(hook_text)
+  status            SocialPostStatus @default(draft)
+  content_main      String
+  content_reply     String?
+  image_url         String?
+  link_url          String?
+  content_score     Int?
+  ab_variant        String?          @db.Char(1)
+  external_post_id  String?
+  external_reply_id String?
+  scheduled_at      DateTime?        @db.Timestamptz
+  posted_at         DateTime?        @db.Timestamptz
+  failed_at         DateTime?        @db.Timestamptz
+  failure_reason    String?
+  impressions       Int              @default(0)
+  reach             Int              @default(0)
+  replies           Int              @default(0)
+  likes             Int              @default(0)
+  reposts           Int              @default(0)
+  bookmarks         Int              @default(0)
+  link_clicks       Int              @default(0)
+  profile_visits    Int              @default(0)
+  velocity_30min    Json             @default("{}")
+  created_at        DateTime         @default(now()) @db.Timestamptz
+  updated_at        DateTime         @default(now()) @db.Timestamptz
+
+  // Relations
+  article   Article?       @relation(fields: [article_id], references: [id], onDelete: SetNull)
+  grant     Grant?         @relation(fields: [grant_id], references: [id], onDelete: SetNull)
+  agent_run AgentRun?      @relation(fields: [agent_run_id], references: [id], onDelete: SetNull)
+  metrics   SocialMetric[]
+  replies_  SocialReply[]
+
+  @@map("social_posts")
+}
+
+model SocialMetric {
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  post_id         String   @db.Uuid
+  snapshot_at     DateTime @default(now()) @db.Timestamptz
+  snapshot_type   String   @default("30min") @db.VarChar(20)
+  impressions     Int      @default(0)
+  reach           Int      @default(0)
+  replies         Int      @default(0)
+  likes           Int      @default(0)
+  reposts         Int      @default(0)
+  bookmarks       Int      @default(0)
+  link_clicks     Int      @default(0)
+  profile_visits  Int      @default(0)
+  engagement_rate Float    @default(dbgenerated("0.0"))
+
+  // Relations
+  post SocialPost @relation(fields: [post_id], references: [id], onDelete: Cascade)
+
+  @@map("social_metrics")
+}
+
+model SocialReply {
+  id                 String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  post_id            String?        @db.Uuid
+  platform           SocialPlatform
+  direction          String         @db.VarChar(10)
+  external_reply_id  String?
+  parent_reply_id    String?
+  author_handle      String?
+  content            String
+  our_response       String?
+  response_posted_at DateTime?      @db.Timestamptz
+  response_score     Int?
+  sentiment          String?        @db.VarChar(20)
+  was_mention        Boolean        @default(false)
+  created_at         DateTime       @default(now()) @db.Timestamptz
+
+  // Relations
+  post SocialPost? @relation(fields: [post_id], references: [id], onDelete: Cascade)
+
+  @@map("social_replies")
+}
+
+model PlatformPattern {
+  id                  String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  platform            SocialPlatform
+  week_start          DateTime       @db.Date
+  best_post_times     Json           @default("[]")
+  best_formats        Json           @default("[]")
+  best_topics         Json           @default("[]")
+  best_hooks          Json           @default("[]")
+  avg_content_score   Float?
+  avg_engagement_rate Float?
+  follower_count      Int?
+  follower_delta      Int?
+  top_posts           Json           @default("[]")
+  strategy_brief      String?
+  generated_at        DateTime       @default(now()) @db.Timestamptz
+
+  @@unique([platform, week_start])
+  @@map("platform_patterns")
+}
+
+model AbTestResult {
+  id              String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  platform        SocialPlatform
+  post_format     SocialPostFormat
+  variant         String           @db.Char(1)
+  hook_type       String?          @db.VarChar(100)
+  content_length  String?          @db.VarChar(20)
+  has_image       Boolean          @default(false)
+  sample_count    Int              @default(0)
+  avg_impressions Float            @default(0)
+  avg_engagement  Float            @default(0)
+  avg_link_clicks Float            @default(0)
+  is_winner       Boolean          @default(false)
+  graduated_at    DateTime?        @db.Timestamptz
+  created_at      DateTime         @default(now()) @db.Timestamptz
+  updated_at      DateTime         @default(now()) @db.Timestamptz
+
+  @@map("ab_test_results")
+}
+
+model GrantSource {
+  id                  String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name                String    @unique @db.VarChar(200)
+  base_url            String
+  rss_url             String?
+  api_endpoint        String?
+  geo_region          String    @default("uk") @db.VarChar(50)
+  sectors             String[]
+  check_frequency     String    @default("weekly") @db.VarChar(20)
+  is_active           Boolean   @default(true)
+  trust_score         Int       @default(90)
+  last_checked_at     DateTime? @db.Timestamptz
+  last_grant_found_at DateTime? @db.Timestamptz
+  total_grants_found  Int       @default(0)
+  scrape_notes        String?
+  created_at          DateTime  @default(now()) @db.Timestamptz
+  updated_at          DateTime  @default(now()) @db.Timestamptz
+
+  // Relations
+  grants Grant[]
+
+  @@map("grant_sources")
+}
+
+model Grant {
+  id                  String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  slug                String          @unique @db.VarChar(500)
+  title               String
+  funder_name         String          @db.VarChar(300)
+  funder_url          String?
+  funder_logo_url     String?
+  source_id           String?         @db.Uuid
+  source_url          String?
+  status              GrantStatus     @default(draft)
+  is_featured         Boolean         @default(false)
+  funding_min         Decimal?        @db.Decimal(16, 2)
+  funding_max         Decimal?        @db.Decimal(16, 2)
+  currency            String          @default("GBP") @db.VarChar(3)
+  total_pot           Decimal?        @db.Decimal(20, 2)
+  funding_type        String          @default("grant") @db.VarChar(50)
+  equity_taken        Boolean         @default(false)
+  co_funding_required Boolean         @default(false)
+  co_funding_percent  Int?
+  geo_scope           String[]        @default(["uk"])
+  sectors             String[]
+  eligibility_tags    String[]
+  trl_min             Int?
+  trl_max             Int?
+  team_size_min       Int?
+  annual_revenue_max  Decimal?        @db.Decimal(16, 2)
+  summary             String
+  eligibility_detail  String?
+  how_to_apply        String?
+  key_dates           Json            @default("{}")
+  deadline            DateTime?       @db.Timestamptz
+  deadline_is_rolling Boolean         @default(false)
+  open_date           DateTime?       @db.Timestamptz
+  results_date        DateTime?       @db.Timestamptz
+  project_duration    String?         @db.VarChar(100)
+  apply_url           String?
+  apply_portal        String?         @db.VarChar(100)
+  image_url           String?
+  og_image_url        String?
+  auto_monitored      Boolean         @default(true)
+  created_by          String?         @db.Uuid
+  published_by        String?         @db.Uuid
+  meta_description    String?         @db.VarChar(160)
+  json_ld             Json?
+  view_count          Int             @default(0)
+  alert_count         Int             @default(0)
+  published_at        DateTime?       @db.Timestamptz
+  closed_at           DateTime?       @db.Timestamptz
+  awarded_at          DateTime?       @db.Timestamptz
+  created_at          DateTime        @default(now()) @db.Timestamptz
+  updated_at          DateTime        @default(now()) @db.Timestamptz
+
+  // Relations
+  source           GrantSource?    @relation(fields: [source_id], references: [id], onDelete: SetNull)
+  creator          User?           @relation("GrantsCreatedBy", fields: [created_by], references: [id], onDelete: SetNull)
+  publisher        User?           @relation("GrantsPublishedBy", fields: [published_by], references: [id], onDelete: SetNull)
+  changes          GrantChange[]
+  alert_logs       GrantAlertLog[]
+  issue_grants     IssueGrant[]
+  social_posts     SocialPost[]
+
+  @@map("grants")
+}
+
+model GrantChange {
+  id            String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  grant_id      String          @db.Uuid
+  change_type   GrantChangeType
+  before_values Json            @default("{}")
+  after_values  Json            @default("{}")
+  detected_by   String          @default("grant_monitor") @db.VarChar(50)
+  agent_run_id  String?         @db.Uuid
+  notes         String?
+  created_at    DateTime        @default(now()) @db.Timestamptz
+
+  // Relations
+  grant     Grant     @relation(fields: [grant_id], references: [id], onDelete: Cascade)
+  agent_run AgentRun? @relation(fields: [agent_run_id], references: [id], onDelete: SetNull)
+
+  @@map("grant_changes")
+}
+
+model GrantAlert {
+  id                       String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  subscriber_email         String         @unique @db.Citext
+  preferences              Json           @default("{}")
+  sectors                  String[]
+  geo_regions              String[]
+  entity_types             String[]
+  funding_min              Decimal?       @db.Decimal(16, 2)
+  funding_max              Decimal?       @db.Decimal(16, 2)
+  alert_frequency          AlertFrequency @default(weekly)
+  active                   Boolean        @default(true)
+  unsubscribe_token        String         @default(dbgenerated("encode(gen_random_bytes(16), 'hex')"))
+  newsletter_subscriber_id String?
+  created_at               DateTime       @default(now()) @db.Timestamptz
+  updated_at               DateTime       @default(now()) @db.Timestamptz
+
+  // Relations
+  subscribers NewsletterSubscriber[]
+
+  @@map("grant_alerts")
+}
+
+model GrantAlertLog {
+  id                 String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  grant_id           String              @db.Uuid
+  subscriber_email   String              @db.Citext
+  alert_type         AlertType
+  status             AlertDeliveryStatus @default(pending)
+  suppression_reason String?
+  resend_email_id    String?
+  opened_at          DateTime?           @db.Timestamptz
+  clicked_at         DateTime?           @db.Timestamptz
+  sent_at            DateTime?           @db.Timestamptz
+  failed_at          DateTime?           @db.Timestamptz
+  failure_reason     String?
+  created_at         DateTime            @default(now()) @db.Timestamptz
+
+  // Relations
+  grant Grant @relation(fields: [grant_id], references: [id], onDelete: Cascade)
+
+  @@unique([grant_id, subscriber_email, alert_type])
+  @@map("grant_alert_log")
+}
+
+model NewsletterSubscriber {
+  id                    String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email                 String           @unique @db.Citext
+  display_name          String?          @db.VarChar(200)
+  status                SubscriberStatus @default(pending)
+  source                String?          @db.VarChar(100)
+  acquisition_page      String?
+  beehiiv_id            String?          @unique @db.VarChar(200)
+  preferences           Json             @default("{}")
+  grant_alerts_opted_in Boolean          @default(false)
+  grant_alert_id        String?          @db.Uuid
+  is_premium            Boolean          @default(false)
+  premium_since         DateTime?        @db.Timestamptz
+  premium_expires_at    DateTime?        @db.Timestamptz
+  stripe_customer_id    String?          @db.VarChar(200)
+  unsubscribe_token     String           @default(dbgenerated("encode(gen_random_bytes(16), 'hex')"))
+  subscribed_at         DateTime         @default(now()) @db.Timestamptz
+  unsubscribed_at       DateTime?        @db.Timestamptz
+  updated_at            DateTime         @default(now()) @db.Timestamptz
+
+  // Relations
+  grant_alert   GrantAlert?           @relation(fields: [grant_alert_id], references: [id], onDelete: SetNull)
+  subscriptions PremiumSubscription[]
+
+  @@map("newsletter_subscribers")
+}
+
+model NewsletterIssue {
+  id                String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  issue_type        String      @default("daily") @db.VarChar(20)
+  subject           String
+  preview_text      String?     @db.VarChar(200)
+  body_html         String?
+  body_text         String?
+  status            IssueStatus @default(draft)
+  beehiiv_issue_id  String?     @unique @db.VarChar(200)
+  subscriber_count  Int         @default(0)
+  open_count        Int         @default(0)
+  click_count       Int         @default(0)
+  unsubscribe_count Int         @default(0)
+  open_rate         Float       @default(dbgenerated("0.0"))
+  scheduled_at      DateTime?   @db.Timestamptz
+  sent_at           DateTime?   @db.Timestamptz
+  created_by        String?     @db.Uuid
+  created_at        DateTime    @default(now()) @db.Timestamptz
+  updated_at        DateTime    @default(now()) @db.Timestamptz
+
+  // Relations
+  creator            User?             @relation(fields: [created_by], references: [id], onDelete: SetNull)
+  issue_articles     IssueArticle[]
+  issue_grants       IssueGrant[]
+  sponsor_placements SponsorPlacement[]
+
+  @@map("newsletter_issues")
+}
+
+model IssueArticle {
+  issue_id   String  @db.Uuid
+  article_id String  @db.Uuid
+  position   Int     @default(0)
+  is_lead    Boolean @default(false)
+
+  // Relations
+  issue   NewsletterIssue @relation(fields: [issue_id], references: [id], onDelete: Cascade)
+  article Article         @relation(fields: [article_id], references: [id], onDelete: Cascade)
+
+  @@id([issue_id, article_id])
+  @@map("issue_articles")
+}
+
+model IssueGrant {
+  issue_id String  @db.Uuid
+  grant_id String  @db.Uuid
+  position Int     @default(0)
+
+  // Relations
+  issue NewsletterIssue @relation(fields: [issue_id], references: [id], onDelete: Cascade)
+  grant Grant           @relation(fields: [grant_id], references: [id], onDelete: Cascade)
+
+  @@id([issue_id, grant_id])
+  @@map("issue_grants")
+}
+
+model Sponsor {
+  id                 String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  company_name       String             @db.VarChar(300)
+  contact_name       String?            @db.VarChar(200)
+  contact_email      String?            @db.Citext
+  website_url        String?
+  logo_url           String?
+  status             SponsorStatus      @default(prospect)
+  rate_per_slot      Decimal?           @db.Decimal(10, 2)
+  currency           String             @default("GBP") @db.VarChar(3)
+  preferred_channels String[]
+  notes              String?
+  created_by         String?            @db.Uuid
+  created_by_user    User?              @relation(fields: [created_by], references: [id], onDelete: SetNull)
+  created_at         DateTime           @default(now()) @db.Timestamptz
+  updated_at         DateTime           @default(now()) @db.Timestamptz
+  placements         SponsorPlacement[]
+
+  @@map("sponsors")
+}
+
+model SponsorPlacement {
+  id             String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  sponsor_id     String        @db.Uuid
+  issue_id       String        @db.Uuid
+  slot_position  String        @default("primary") @db.VarChar(50)
+  ad_headline    String?
+  ad_copy        String
+  cta_text       String?       @db.VarChar(100)
+  cta_url        String?
+  image_url      String?
+  amount         Decimal       @db.Decimal(10, 2)
+  currency       String        @default("GBP") @db.VarChar(3)
+  payment_status PaymentStatus @default(pending)
+  invoice_number String?       @db.VarChar(100)
+  invoice_url    String?
+  paid_at        DateTime?     @db.Timestamptz
+  impressions    Int           @default(0)
+  clicks         Int           @default(0)
+  created_at     DateTime      @default(now()) @db.Timestamptz
+  updated_at     DateTime      @default(now()) @db.Timestamptz
+
+  // Relations
+  sponsor Sponsor         @relation(fields: [sponsor_id], references: [id], onDelete: Restrict)
+  issue   NewsletterIssue @relation(fields: [issue_id], references: [id], onDelete: Restrict)
+
+  @@map("sponsor_placements")
+}
+
+model PremiumSubscription {
+  id                     String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  subscriber_id          String    @db.Uuid
+  stripe_subscription_id String?   @unique @db.VarChar(200)
+  stripe_customer_id     String?   @db.VarChar(200)
+  plan_name              String    @default("premium_monthly") @db.VarChar(50)
+  amount                 Decimal   @db.Decimal(10, 2)
+  currency               String    @default("GBP") @db.VarChar(3)
+  status                 String    @default("active") @db.VarChar(20)
+  current_period_start   DateTime? @db.Timestamptz
+  current_period_end     DateTime? @db.Timestamptz
+  cancelled_at           DateTime? @db.Timestamptz
+  cancel_at_period_end   Boolean   @default(false)
+  created_at             DateTime  @default(now()) @db.Timestamptz
+  updated_at             DateTime  @default(now()) @db.Timestamptz
+
+  // Relations
+  subscriber NewsletterSubscriber @relation(fields: [subscriber_id], references: [id], onDelete: Cascade)
+
+  @@map("premium_subscriptions")
+}
+
+model AuditLog {
+  id           String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id      String?     @db.Uuid
+  user_email   String?     @db.Citext
+  user_role    String?     @db.VarChar(50)
+  action       AuditAction
+  entity_type  String?     @db.VarChar(50)
+  entity_id    String?     @db.Uuid
+  entity_slug  String?
+  before_state Json?
+  after_state  Json?
+  ip_address   String      @db.Inet
+  user_agent   String?
+  request_id   String?
+  metadata     Json        @default("{}")
+  created_at   DateTime    @default(now()) @db.Timestamptz
+
+  // Relations
+  user User? @relation(fields: [user_id], references: [id], onDelete: SetNull)
+
+  @@map("audit_logs")
+}
+
+model LoginAttempt {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email          String   @db.Citext
+  ip_address     String   @db.Inet
+  user_agent     String?
+  success        Boolean
+  failure_reason String?  @db.VarChar(100)
+  user_id        String?  @db.Uuid
+  totp_used      Boolean  @default(false)
+  attempted_at   DateTime @default(now()) @db.Timestamptz
+
+  // Relations
+  user User? @relation(fields: [user_id], references: [id], onDelete: SetNull)
+
+  @@map("login_attempts")
+}
+
+model RateLimitEvent {
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  ip_address      String   @db.Inet
+  route           String   @db.VarChar(200)
+  method          String   @default("GET") @db.VarChar(10)
+  request_count   Int      @default(1)
+  limit_threshold Int
+  blocked         Boolean  @default(false)
+  user_id         String?  @db.Uuid
+  user_agent      String?
+  window_start    DateTime @db.Timestamptz
+  created_at      DateTime @default(now()) @db.Timestamptz
+
+  // Relations
+  user User? @relation(fields: [user_id], references: [id], onDelete: SetNull)
+
+  @@map("rate_limit_events")
+}
+
+model IpBlocklist {
+  id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  ip_address   String    @unique @db.Inet
+  cidr_block   String?   @db.VarChar(50)
+  reason       String
+  is_permanent Boolean   @default(false)
+  blocked_by   String?   @db.Uuid
+  expires_at   DateTime? @db.Timestamptz
+  created_at   DateTime  @default(now()) @db.Timestamptz
+
+  // Relations
+  blocker User? @relation(fields: [blocked_by], references: [id], onDelete: SetNull)
+
+  @@map("ip_blocklist")
+}
+
+model CspViolationReport {
+  id                  String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  document_uri        String?
+  violated_directive  String?
+  effective_directive String?
+  blocked_uri         String?
+  source_file         String?
+  line_number         Int?
+  column_number       Int?
+  original_policy     String?
+  ip_address          String?  @db.Inet
+  user_agent          String?
+  created_at          DateTime @default(now()) @db.Timestamptz
+
+  @@map("csp_violation_reports")
+}
+
+model AdminSession {
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id       String   @db.Uuid
+  session_token String   @unique @default(dbgenerated("encode(gen_random_bytes(32), 'hex')"))
+  ip_address    String   @db.Inet
+  user_agent    String?
+  is_active     Boolean  @default(true)
+  last_activity DateTime @db.Timestamptz
+  expires_at    DateTime @default(dbgenerated("(now() + '08:00:00'::interval)")) @db.Timestamptz
+  created_at    DateTime @default(now()) @db.Timestamptz
+
+  // Relations
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@map("admin_sessions")
+}

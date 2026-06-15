@@ -1,0 +1,121 @@
+@import "tailwindcss";
+
+:root {
+  --color-near-black:   #0A0A0F;
+  --color-rift-red:     #FF3D3D;
+  --color-off-white:    #F0F0F5;
+  --color-surface:      #1A1A24;
+  --color-border:       #2A2A38;
+  --color-muted:        #8B8BA0;
+  --color-dev-blue:     #4FA3F5;
+  --color-grant-green:  #1D9E75;
+  --color-sec-amber:    #EF9F27;
+  --color-founders-purple: #B47FDD;
+  --color-creators-teal:   #5DCAA5;
+}
+
+@theme {
+  --color-near-black: var(--color-near-black);
+  --color-rift-red: var(--color-rift-red);
+  --color-off-white: var(--color-off-white);
+  --color-surface: var(--color-surface);
+  --color-border: var(--color-border);
+  --color-muted: var(--color-muted);
+  --color-dev-blue: var(--color-dev-blue);
+  --color-grant-green: var(--color-grant-green);
+  --color-sec-amber: var(--color-sec-amber);
+  --color-founders-purple: var(--color-founders-purple);
+  --color-creators-teal: var(--color-creators-teal);
+
+  --font-headlines: var(--font-space-grotesk), sans-serif;
+  --font-body: var(--font-inter), sans-serif;
+  --font-data: var(--font-jetbrains-mono), monospace;
+}
+
+html, body {
+  background-color: var(--color-near-black);
+  color: var(--color-off-white);
+  font-family: var(--font-inter), sans-serif;
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+}
+
+/* Custom scrollbar matching dark design */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: var(--color-near-black);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-muted);
+}
+
+/* Typography scale utility classes */
+.text-display-xl {
+  font-family: var(--font-space-grotesk), sans-serif;
+  font-weight: 700;
+  font-size: 40px;
+  letter-spacing: -1px;
+}
+
+.text-display-l {
+  font-family: var(--font-space-grotesk), sans-serif;
+  font-weight: 700;
+  font-size: 28px;
+  letter-spacing: -0.5px;
+}
+
+.text-display-m {
+  font-family: var(--font-space-grotesk), sans-serif;
+  font-weight: 600;
+  font-size: 18px;
+}
+
+.text-body-l {
+  font-family: var(--font-inter), sans-serif;
+  font-weight: 400;
+  font-size: 15px;
+  line-height: 1.65;
+}
+
+.text-body-m {
+  font-family: var(--font-inter), sans-serif;
+  font-weight: 400;
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.text-label {
+  font-family: var(--font-jetbrains-mono), monospace;
+  font-weight: 500;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+/* Ticker animations */
+@keyframes ticker {
+  0% {
+    transform: translate3d(0, 0, 0);
+  }
+  100% {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+
+.animate-ticker {
+  display: flex;
+  width: max-content;
+  animation: ticker 30s linear infinite;
+}
+
+.animate-ticker:hover {
+  animation-play-state: paused;
+}

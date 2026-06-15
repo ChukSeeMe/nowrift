@@ -1,0 +1,15 @@
+{
+  "name": "NowRift",
+  "short_name": "NowRift",
+  "theme_color": "#FF3D3D",
+  "background_color": "#0A0A0F",
+  "display": "standalone",
+  "start_url": "/",
+  "icons": [
+    {
+      "src": "/icons/nowrift-icon.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml"
+    }
+  ]
+}
