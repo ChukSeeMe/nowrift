@@ -34,6 +34,33 @@ export async function verifyRefreshToken(token: string): Promise<RefreshPayload 
   }
 }
 
+import { cookies } from 'next/headers';
+
+export interface AdminSession {
+  userId: string;
+  role: string;
+  totp_enabled: boolean;
+}
+
+export async function getAdminSession(): Promise<AdminSession | null> {
+  try {
+    const cookieStore = await cookies();
+    const accessToken = cookieStore.get('access_token')?.value;
+    if (!accessToken) return null;
+
+    const payload = await verifyAccessToken(accessToken);
+    if (!payload) return null;
+
+    return {
+      userId: payload.userId,
+      role: payload.role,
+      totp_enabled: payload.totpEnabled,
+    };
+  } catch (error) {
+    return null;
+  }
+}
+
 export async function hashToken(token: string): Promise<string> {
   const msgUint8 = new TextEncoder().encode(token);
   const hashBuffer = await crypto.subtle.digest('SHA-256', msgUint8);
