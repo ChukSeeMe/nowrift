@@ -3,8 +3,8 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { IconRosetteFilled, IconFileText } from '@tabler/icons-react';
 import ChannelTag from './ChannelTag';
-import AigenAuditPill from './AigenAuditPill';
 import SoWhatBox from './SoWhatBox';
+import { getFallbackImage } from '@/lib/utils/image';
 
 interface ArticleCardProps {
   article: {
@@ -24,21 +24,24 @@ interface ArticleCardProps {
       color_hex: string;
     } | null;
     audit_record?: {
-      similarity_score: number;
+      max_similarity_score: number;
       copyright_passed: boolean;
       source_count: number;
     } | null;
     images?: Array<{
       image_url: string;
       alt_text?: string | null;
+      image_type?: string;
     }>;
   };
   className?: string;
 }
 
 export function ArticleCard({ article, className = '' }: ArticleCardProps) {
-  const thumbnail = article.images?.[0]?.image_url || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="88" height="88" viewBox="0 0 88 88"><rect width="88" height="88" fill="%231A1A24"/></svg>';
-  const altText = article.images?.[0]?.alt_text || article.headline;
+  const heroImage = article.images?.find(img => img.image_type === 'hero');
+  const rawUrl = heroImage?.image_url || article.images?.[0]?.image_url;
+  const thumbnail = (rawUrl && rawUrl !== 'css_fallback') ? rawUrl : getFallbackImage(article.slug, article.headline, 88, 88);
+  const altText = heroImage?.alt_text || article.headline;
 
   const timeString = article.published_at
     ? new Date(article.published_at).toLocaleDateString('en-US', {
@@ -129,15 +132,7 @@ export function ArticleCard({ article, className = '' }: ArticleCardProps) {
           />
         )}
 
-        {article.audit_record && (
-          <div className="mt-1 flex justify-start">
-            <AigenAuditPill
-              similarityScore={article.audit_record.similarity_score}
-              copyrightPassed={article.audit_record.copyright_passed}
-              sourceCount={sourceCount}
-            />
-          </div>
-        )}
+
       </div>
     </article>
   );

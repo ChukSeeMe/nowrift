@@ -8,18 +8,23 @@ import Footer from '@/components/layout/Footer';
 import GrantCard from '@/components/grants/GrantCard';
 import GrantAlertForm from '@/components/grants/GrantAlertForm';
 import { IconFilter, IconBuildingBridge, IconCoins, IconTimeline } from '@tabler/icons-react';
+import { Pagination } from '@/components/ui/Pagination';
+import { cachedQuery } from '@/lib/cache/queries';
+import { CACHE_TTL } from '@/lib/cache/ttl';
 
 interface PageProps {
   searchParams: Promise<{
     sector?: string;
     geo?: string;
     status?: string;
+    page?: string;
   }>;
 }
 
 export default async function GrantsPage({ searchParams }: PageProps) {
   // Bind RLS Context based on cookies and headers
-  await getSessionAndSetRls();
+  const { role } = await getSessionAndSetRls();
+  const isVisitor = role === 'visitor';
 
   const resolvedParams = await searchParams;
   const sector = typeof resolvedParams.sector === 'string' ? resolvedParams.sector : undefined;
@@ -42,25 +47,77 @@ export default async function GrantsPage({ searchParams }: PageProps) {
     filter.status = { in: ['open', 'closing_soon', 'closed'] };
   }
 
-  // Fetch filtered grants list
-  const grants = await prisma.grant.findMany({
-    where: filter,
-    orderBy: [
-      { is_featured: 'desc' },
-      { published_at: 'desc' }
-    ],
+  // Fetch filtered grants list with pagination
+  const currentPage = Math.max(1, parseInt(resolvedParams.page || '1'));
+  const GRANTS_PER_PAGE = 20;
+
+  const cacheKeyGrants = `cache:grants:list:${sector || 'all'}:${geo || 'all'}:${status || 'all'}:${currentPage}`;
+  const cacheKeyCount = `cache:grants:count:${sector || 'all'}:${geo || 'all'}:${status || 'all'}`;
+
+  const grants = isVisitor
+    ? await cachedQuery(cacheKeyGrants, CACHE_TTL.GRANTS_LIST, () =>
+        prisma.grant.findMany({
+          where: filter,
+          orderBy: [
+            { is_featured: 'desc' },
+            { published_at: 'desc' }
+          ],
+          skip: (currentPage - 1) * GRANTS_PER_PAGE,
+          take: GRANTS_PER_PAGE,
+        })
+      )
+    : await prisma.grant.findMany({
+        where: filter,
+        orderBy: [
+          { is_featured: 'desc' },
+          { published_at: 'desc' }
+        ],
+        skip: (currentPage - 1) * GRANTS_PER_PAGE,
+        take: GRANTS_PER_PAGE,
+      });
+
+  const totalCount = isVisitor
+    ? await cachedQuery(cacheKeyCount, CACHE_TTL.GRANTS_LIST, () =>
+        prisma.grant.count({
+          where: filter,
+        })
+      )
+    : await prisma.grant.count({
+        where: filter,
+      });
+
+  const totalPages = Math.ceil(totalCount / GRANTS_PER_PAGE);
+
+  // Convert resolvedParams for searchParams prop
+  const pageParams: Record<string, string | undefined> = {};
+  Object.entries(resolvedParams).forEach(([key, val]) => {
+    if (typeof val === 'string') {
+      pageParams[key] = val;
+    }
   });
 
   // Calculate statistics across all active (open / closing_soon) grants
-  const activeGrantsStats = await prisma.grant.findMany({
-    where: {
-      status: { in: ['open', 'closing_soon'] }
-    },
-    select: {
-      status: true,
-      funding_max: true,
-    }
-  });
+  const activeGrantsStats = isVisitor
+    ? await cachedQuery('cache:active_grants_stats', CACHE_TTL.GRANTS_LIST, () =>
+        prisma.grant.findMany({
+          where: {
+            status: { in: ['open', 'closing_soon'] }
+          },
+          select: {
+            status: true,
+            funding_max: true,
+          }
+        })
+      )
+    : await prisma.grant.findMany({
+        where: {
+          status: { in: ['open', 'closing_soon'] }
+        },
+        select: {
+          status: true,
+          funding_max: true,
+        }
+      });
 
   const totalOpenCount = activeGrantsStats.filter(g => g.status === 'open').length;
   const totalClosingSoonCount = activeGrantsStats.filter(g => g.status === 'closing_soon').length;
@@ -253,7 +310,7 @@ export default async function GrantsPage({ searchParams }: PageProps) {
             
             <div className="flex items-center justify-between border-b border-border/60 pb-4">
               <h2 className="text-display-m text-off-white font-bold">
-                Available Grants ({grants.length})
+                Available Grants ({totalCount})
               </h2>
             </div>
 
@@ -272,6 +329,14 @@ export default async function GrantsPage({ searchParams }: PageProps) {
               </div>
             )}
 
+            {totalPages > 1 && (
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                baseUrl="/grants"
+                searchParams={pageParams}
+              />
+            )}
           </div>
 
         </div>

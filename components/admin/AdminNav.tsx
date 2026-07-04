@@ -8,7 +8,9 @@ import {
   IconCpu, 
   IconBriefcase, 
   IconTrendingUp,
-  IconLogout
+  IconLogout,
+  IconTerminal2,
+  IconMessage2
 } from '@tabler/icons-react';
 import Logo from '../ui/Logo';
 import { AdminSession } from '@/lib/auth/jwt-edge';
@@ -22,7 +24,9 @@ export function AdminNav({ session }: AdminNavProps) {
   const navItems = [
     { name: 'Dashboard', href: '/admin', icon: IconLayoutDashboard },
     { name: 'Articles', href: '/admin/articles', icon: IconNews },
+    { name: 'New Interview', href: '/admin/deep-dives/new-interview', icon: IconMessage2 },
     { name: 'Grants', href: '/admin/grants', icon: IconGift },
+    { name: 'Tools', href: '/admin/tools', icon: IconTerminal2 },
     { name: 'Users', href: '/admin/users', icon: IconUsers },
     { name: 'Agents', href: '/admin/agents', icon: IconCpu },
     { name: 'Sponsors', href: '/admin/sponsors', icon: IconBriefcase },

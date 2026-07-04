@@ -48,14 +48,14 @@ export async function POST(request: NextRequest) {
     // Clear authentication cookies
     response.cookies.set('refresh_token', '', {
       httpOnly: true,
-      secure: true,
+      secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',
       maxAge: 0,
       path: '/',
     });
 
     response.cookies.set('access_token', '', {
-      secure: true,
+      secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',
       maxAge: 0,
       path: '/',

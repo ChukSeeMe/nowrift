@@ -8,6 +8,7 @@ import BreakingTicker from '@/components/layout/BreakingTicker';
 import Footer from '@/components/layout/Footer';
 import ArticleCard from '@/components/articles/ArticleCard';
 import GrantCard from '@/components/grants/GrantCard';
+import { Pagination } from '@/components/ui/Pagination';
 
 interface PageProps {
   searchParams: Promise<{
@@ -25,7 +26,7 @@ export default async function SearchPage({ searchParams }: PageProps) {
   const q = typeof resolvedParams.q === 'string' ? resolvedParams.q.trim() : '';
   const type = typeof resolvedParams.type === 'string' ? resolvedParams.type : 'article';
   const page = Math.max(1, Number(resolvedParams.page) || 1);
-  const limit = 10; // 10 results per page for compact display
+  const limit = 20; // 20 results per page for standard feed display
   const skip = (page - 1) * limit;
 
   let results: any[] = [];
@@ -89,14 +90,13 @@ export default async function SearchPage({ searchParams }: PageProps) {
     totalPages = Math.ceil(totalCount / limit);
   }
 
-  // Helpers for pagination links
-  const getPageUrl = (targetPage: number) => {
-    const params = new URLSearchParams();
-    if (q) params.set('q', q);
-    params.set('type', type);
-    params.set('page', targetPage.toString());
-    return `/search?${params.toString()}`;
-  };
+  // Convert resolvedParams for searchParams prop
+  const pageParams: Record<string, string | undefined> = {};
+  Object.entries(resolvedParams).forEach(([key, val]) => {
+    if (typeof val === 'string') {
+      pageParams[key] = val;
+    }
+  });
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -185,39 +185,12 @@ export default async function SearchPage({ searchParams }: PageProps) {
 
                 {/* Pagination Controls */}
                 {totalPages > 1 && (
-                  <div className="flex items-center justify-between pt-6 border-t border-border/40 text-label text-muted">
-                    {page > 1 ? (
-                      <Link
-                        href={getPageUrl(page - 1)}
-                        className="inline-flex items-center gap-1 hover:text-off-white transition-colors"
-                      >
-                        <IconChevronLeft size={16} />
-                        <span>Previous</span>
-                      </Link>
-                    ) : (
-                      <span className="opacity-40 cursor-not-allowed inline-flex items-center gap-1">
-                        <IconChevronLeft size={16} />
-                        <span>Previous</span>
-                      </span>
-                    )}
-
-                    <span>Page {page} of {totalPages}</span>
-
-                    {page < totalPages ? (
-                      <Link
-                        href={getPageUrl(page + 1)}
-                        className="inline-flex items-center gap-1 hover:text-off-white transition-colors"
-                      >
-                        <span>Next</span>
-                        <IconChevronRight size={16} />
-                      </Link>
-                    ) : (
-                      <span className="opacity-40 cursor-not-allowed inline-flex items-center gap-1">
-                        <span>Next</span>
-                        <IconChevronRight size={16} />
-                      </span>
-                    )}
-                  </div>
+                  <Pagination
+                    currentPage={page}
+                    totalPages={totalPages}
+                    baseUrl="/search"
+                    searchParams={pageParams}
+                  />
                 )}
               </div>
             ) : (

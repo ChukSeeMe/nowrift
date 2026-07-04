@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma, { setRlsContext } from '@/lib/db/prisma';
+import { cachedQuery } from '@/lib/cache/queries';
+import { CACHE_TTL } from '@/lib/cache/ttl';
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -12,14 +14,17 @@ export async function GET(request: NextRequest) {
   const userRole = request.headers.get('x-user-role') || 'visitor';
 
   try {
-    await setRlsContext(userId, userRole);
+    const isVisitor = !['editor', 'senior_editor', 'admin', 'super_admin'].includes(userRole);
+    if (!isVisitor) {
+      await setRlsContext(userId, userRole);
+    }
 
     const skip = (page - 1) * limit;
 
     const where: any = {};
 
     // Enforce publication constraints based on role
-    if (!['editor', 'senior_editor', 'admin', 'super_admin'].includes(userRole)) {
+    if (isVisitor) {
       where.status = 'published';
     }
 
@@ -33,32 +38,40 @@ export async function GET(request: NextRequest) {
       };
     }
 
-    const [articles, totalCount] = await Promise.all([
-      prisma.article.findMany({
-        where,
-        include: {
-          channel: true,
-          images: {
-            take: 1,
+    const fetchFn = async () => {
+      const [articlesList, count] = await Promise.all([
+        prisma.article.findMany({
+          where,
+          include: {
+            channel: true,
+            images: {
+              take: 1,
+            },
+            audit_record: true,
           },
-          audit_record: true,
-        },
-        orderBy: {
-          published_at: 'desc',
-        },
-        skip,
-        take: limit,
-      }),
-      prisma.article.count({ where }),
-    ]);
+          orderBy: {
+            published_at: 'desc',
+          },
+          skip,
+          take: limit,
+        }),
+        prisma.article.count({ where }),
+      ]);
+      return { articlesList, count };
+    };
+
+    const cacheKey = `cache:api:articles:${channel || 'all'}:${page}:${limit}:${breaking}`;
+    const { articlesList, count } = isVisitor
+      ? await cachedQuery(cacheKey, CACHE_TTL.ARTICLE_LIST, fetchFn)
+      : await fetchFn();
 
     return NextResponse.json({
-      articles,
+      articles: articlesList,
       pagination: {
         page,
         limit,
-        total_count: totalCount,
-        total_pages: Math.ceil(totalCount / limit),
+        total_count: count,
+        total_pages: Math.ceil(count / limit),
       },
     });
   } catch (error: any) {

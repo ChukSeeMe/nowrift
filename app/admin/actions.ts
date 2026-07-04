@@ -502,3 +502,137 @@ export async function signOut() {
   }
   redirect('/login');
 }
+
+export async function createTool(data: {
+  name: string;
+  slug: string;
+  description: string;
+  category: string;
+  url: string;
+  icon: string;
+  color: string;
+  released_at?: Date | string;
+}) {
+  const session = await requirePermission('admin');
+  
+  const tool = await prisma.tool.create({
+    data: {
+      name: data.name,
+      slug: data.slug,
+      description: data.description,
+      category: data.category,
+      url: data.url,
+      icon: data.icon || 'IconCode',
+      color: data.color || '#4FA3F5',
+      released_at: data.released_at ? new Date(data.released_at) : new Date(),
+    },
+  });
+
+  revalidatePath('/tools');
+  revalidatePath('/admin/tools');
+  return { success: true, tool };
+}
+
+export async function updateTool(id: string, data: {
+  name: string;
+  slug: string;
+  description: string;
+  category: string;
+  url: string;
+  icon: string;
+  color: string;
+  released_at?: Date | string;
+  is_active?: boolean;
+}) {
+  const session = await requirePermission('admin');
+  
+  const tool = await prisma.tool.update({
+    where: { id },
+    data: {
+      name: data.name,
+      slug: data.slug,
+      description: data.description,
+      category: data.category,
+      url: data.url,
+      icon: data.icon,
+      color: data.color,
+      is_active: data.is_active !== undefined ? data.is_active : true,
+      released_at: data.released_at ? new Date(data.released_at) : undefined,
+    },
+  });
+
+  revalidatePath('/tools');
+  revalidatePath('/admin/tools');
+  return { success: true, tool };
+}
+
+export async function deleteTool(id: string) {
+  const session = await requirePermission('admin');
+  
+  await prisma.tool.delete({
+    where: { id },
+  });
+
+  revalidatePath('/tools');
+  revalidatePath('/admin/tools');
+  return { success: true };
+}
+
+export async function createFounderInterview(data: {
+  headline: string;
+  deck: string;
+  body_html: string;
+  sectors: string[];
+  read_time_minutes?: number;
+}) {
+  const session = await requirePermission('editor');
+  
+  // Clean headline to make slug
+  const baseSlug = data.headline
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-|-$)/g, '');
+  
+  // Ensure unique slug
+  let slug = baseSlug;
+  let exists = await prisma.article.findUnique({ where: { slug } });
+  let count = 1;
+  while (exists) {
+    slug = `${baseSlug}-${count}`;
+    exists = await prisma.article.findUnique({ where: { slug } });
+    count++;
+  }
+  
+  const wordCount = data.body_html.split(/\s+/).filter(Boolean).length;
+  const readTime = data.read_time_minutes || Math.max(1, Math.round(wordCount / 200));
+
+  const article = await prisma.article.create({
+    data: {
+      slug,
+      headline: data.headline,
+      deck: data.deck,
+      body_html: data.body_html,
+      content_tier: 'deep_dive',
+      deep_dive_format: 'interview',
+      is_human_authored: true,
+      read_time_minutes: readTime,
+      sectors: data.sectors,
+      status: 'published',
+      created_by: session.userId,
+      published_at: new Date(),
+    },
+  });
+
+  await writeAuditLog({
+    userId: session.userId,
+    action: AuditAction.article_created,
+    entityType: 'articles',
+    entityId: article.id,
+    after: article,
+  });
+
+  revalidatePath('/deep-dives');
+  revalidatePath(`/deep-dives/${slug}`);
+  return { success: true, article };
+}
+

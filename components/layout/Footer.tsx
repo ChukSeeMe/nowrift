@@ -20,6 +20,9 @@ export function Footer() {
             <Link href="/channels/developers" className="hover:text-rift-red transition-colors">Developers</Link>
             <Link href="/channels/cybersecurity" className="hover:text-rift-red transition-colors">Cybersecurity</Link>
             <Link href="/channels/hardware" className="hover:text-rift-red transition-colors">Hardware</Link>
+            <Link href="/channels/founders" className="hover:text-rift-red transition-colors">Founders</Link>
+            <Link href="/channels/creators" className="hover:text-rift-red transition-colors">Creators</Link>
+            <Link href="/channels/data-science" className="hover:text-rift-red transition-colors">Data Science</Link>
           </nav>
         </div>
 

@@ -44,6 +44,7 @@ enum ImageProvider {
   source_og
   unsplash
   fal_ai
+  pollinations
   css_fallback
   manual_upload
 
@@ -63,6 +64,7 @@ enum AgentName {
   social_community
   social_trend
   social_strategy
+  tool_discoverer
 
   @@map("agent_name")
 }
@@ -435,24 +437,49 @@ model Article {
   retracted_at       DateTime?     @db.Timestamptz
   created_at         DateTime      @default(now()) @db.Timestamptz
   updated_at         DateTime      @default(now()) @db.Timestamptz
+  
+  // Deep Dive fields
+  content_tier       String        @default("daily") @db.VarChar(20)
+  deep_dive_format   String?       @db.VarChar(20)
+  related_sector     String?       @db.VarChar(50)
+  source_article_ids String[]      @db.Uuid
+  is_human_authored  Boolean       @default(false)
+  read_time_minutes  Int?
+  sectors            String[]      @db.VarChar(50)
+  writing_style      String?       @db.VarChar(30)
 
   // Relations
-  channel        Channel?          @relation(fields: [channel_id], references: [id], onDelete: SetNull)
-  creator        User?             @relation("CreatedBy", fields: [created_by], references: [id], onDelete: SetNull)
-  approver       User?             @relation("ApprovedBy", fields: [approved_by], references: [id], onDelete: SetNull)
-  retractor      User?             @relation("RetractedBy", fields: [retracted_by], references: [id], onDelete: SetNull)
-  sources        ArticleSource[]
-  audit_record   AigenAuditRecord?
-  tags           ArticleTag[]
-  images         ArticleImage[]
-  scrape_queue   ScrapeQueue[]
-  content_reports ContentReport[]
-  synthesis_jobs SynthesisJob[]
-  social_posts   SocialPost[]
-  issue_articles IssueArticle[]
+  channel             Channel?            @relation(fields: [channel_id], references: [id], onDelete: SetNull)
+  creator             User?               @relation("CreatedBy", fields: [created_by], references: [id], onDelete: SetNull)
+  approver            User?               @relation("ApprovedBy", fields: [approved_by], references: [id], onDelete: SetNull)
+  retractor           User?               @relation("RetractedBy", fields: [retracted_by], references: [id], onDelete: SetNull)
+  sources             ArticleSource[]
+  audit_record        AigenAuditRecord?
+  tags                ArticleTag[]
+  images              ArticleImage[]
+  scrape_queue        ScrapeQueue[]
+  content_reports     ContentReport[]
+  synthesis_jobs      SynthesisJob[]
+  social_posts        SocialPost[]
+  issue_articles      IssueArticle[]
+  sector_coverage_log SectorCoverageLog[]
 
   @@map("articles")
 }
+
+model SectorCoverageLog {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  sector     String   @db.VarChar(50)
+  article_id String?  @db.Uuid
+  covered_at DateTime @default(now()) @db.Timestamptz
+
+  // Relations
+  article    Article? @relation(fields: [article_id], references: [id], onDelete: SetNull)
+
+  @@map("sector_coverage_log")
+  @@index([sector, covered_at(sort: Desc)])
+}
+
 
 model ArticleSource {
   id               String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
@@ -1186,4 +1213,29 @@ model AdminSession {
   user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
   @@map("admin_sessions")
+}
+
+model Tool {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name        String   @unique @db.VarChar(200)
+  slug        String   @unique @db.VarChar(200)
+  description String
+  category    String   @db.VarChar(100)
+  url         String
+  icon        String   @default("IconCode") @db.VarChar(100)
+  color       String   @default("#4FA3F5") @db.VarChar(20)
+  released_at DateTime @default(now()) @db.Timestamptz
+  is_active   Boolean  @default(true)
+  created_at  DateTime @default(now()) @db.Timestamptz
+  updated_at  DateTime @default(now()) @db.Timestamptz
+
+  // New Fields
+  pricing     String   @default("free") @db.VarChar(50) // 'free', 'paid', 'freemium', 'open_source'
+  type        String   @default("software_tool") @db.VarChar(50) // 'software_tool', 'ai_model', 'github_repo', 'prompt'
+  developer   String?  @db.VarChar(200)
+  prompt_text String?
+  stars       Int?
+  metadata    Json?    @default("{}")
+
+  @@map("tools")
 }

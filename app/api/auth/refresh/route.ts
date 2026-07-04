@@ -77,7 +77,7 @@ export async function POST(request: NextRequest) {
 
     // Set updated access token cookie for initial middleware SSR check
     response.cookies.set('access_token', newAccessToken, {
-      secure: true,
+      secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',
       maxAge: 15 * 60, // 15 mins
       path: '/',

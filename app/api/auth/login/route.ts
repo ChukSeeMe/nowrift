@@ -191,7 +191,7 @@ export async function POST(request: NextRequest) {
     // httpOnly, Secure, SameSite=Strict cookie for refresh token
     response.cookies.set('refresh_token', refreshToken, {
       httpOnly: true,
-      secure: true,
+      secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',
       maxAge: 7 * 24 * 60 * 60, // 7 days in seconds
       path: '/',
@@ -199,7 +199,7 @@ export async function POST(request: NextRequest) {
 
     // Set non-httpOnly access_token cookie for initial middleware SSR check
     response.cookies.set('access_token', accessToken, {
-      secure: true,
+      secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',
       maxAge: 15 * 60, // 15 mins in seconds
       path: '/',

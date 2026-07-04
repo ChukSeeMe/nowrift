@@ -22,11 +22,13 @@ export async function getSessionAndSetRls() {
                     headersList.get('x-real-ip') || 
                     '127.0.0.1';
 
-  await prisma.$executeRaw`
-    SELECT set_config('app.current_user_id', ${userId ?? ''}, true),
-           set_config('app.current_role', ${role}, true),
-           set_config('app.request_ip', ${requestIp}, true)
-  `;
+  if (role !== 'visitor') {
+    await prisma.$executeRaw`
+      SELECT set_config('app.current_user_id', ${userId ?? ''}, true),
+             set_config('app.current_role', ${role}, true),
+             set_config('app.request_ip', ${requestIp}, true)
+    `;
+  }
 
   return { userId, role, requestIp };
 }

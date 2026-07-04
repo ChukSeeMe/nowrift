@@ -3,6 +3,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import prisma from '@/lib/db/prisma';
 import ArticleSearchClient from './ArticleSearchClient';
+import { getFallbackImage } from '@/lib/utils/image';
 
 export const dynamic = 'force-dynamic';
 
@@ -117,7 +118,8 @@ export default async function ArticlesAdminPage({ searchParams }: PageProps) {
               </thead>
               <tbody>
                 {articles.map((art) => {
-                  const thumb = art.images?.[0]?.image_url || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48"><rect width="48" height="48" fill="%231A1A24"/></svg>';
+                  const rawThumb = art.images?.[0]?.image_url;
+                  const thumb = (rawThumb && rawThumb !== 'css_fallback') ? rawThumb : getFallbackImage(art.slug, art.headline, 48, 48);
                   const rel = art.relevance_score ?? 0;
                   const relColor = 
                     rel >= 0.8 ? 'text-grant-green' : 

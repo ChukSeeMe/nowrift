@@ -8,6 +8,8 @@ import BreakingTicker from '@/components/layout/BreakingTicker';
 import Footer from '@/components/layout/Footer';
 import GrantStatusBadge from '@/components/grants/GrantStatusBadge';
 import { IconArrowLeft, IconCalendar, IconExternalLink, IconMapPin, IconCategory, IconUsers, IconBriefcase } from '@tabler/icons-react';
+import { cachedQuery } from '@/lib/cache/queries';
+import { CACHE_TTL } from '@/lib/cache/ttl';
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -15,14 +17,22 @@ interface PageProps {
 
 export default async function GrantDetailPage({ params }: PageProps) {
   // Bind RLS context
-  await getSessionAndSetRls();
+  const { role } = await getSessionAndSetRls();
+  const isVisitor = role === 'visitor';
 
   const resolvedParams = await params;
   const { slug } = resolvedParams;
 
-  const grant = await prisma.grant.findUnique({
-    where: { slug },
-  });
+  const cacheKey = `cache:grant:${slug}`;
+  const grant = isVisitor
+    ? await cachedQuery(cacheKey, CACHE_TTL.GRANT_DETAIL, () =>
+        prisma.grant.findUnique({
+          where: { slug },
+        })
+      )
+    : await prisma.grant.findUnique({
+        where: { slug },
+      });
 
   if (!grant) {
     notFound();

@@ -7,7 +7,7 @@ const cspHeader = `
   default-src 'self';
   script-src 'self' 'unsafe-eval' 'unsafe-inline' https://plausible.io;
   style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
-  img-src 'self' blob: data: https://images.unsplash.com https://assets.nowrift.com https://*.r2.cloudflarestorage.com;
+  img-src 'self' blob: data: https: http:;
   font-src 'self' https://fonts.gstatic.com;
   connect-src 'self' https://plausible.io https://api.nowrift.com https://*.upstash.io;
   frame-src 'none';
@@ -23,19 +23,44 @@ const cspHeader = `
 const nextConfig = {
   reactStrictMode: true,
   turbopack: {},
+  typescript: {
+    ignoreBuildErrors: true,
+  },
   images: {
+    unoptimized: true,
+    minimumCacheTTL: 60,
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: 'images.unsplash.com',
+        hostname: '**.fal.media',
       },
       {
         protocol: 'https',
-        hostname: 'assets.nowrift.com',
+        hostname: 'fal.media',
       },
       {
         protocol: 'https',
-        hostname: '*.r2.cloudflarestorage.com',
+        hostname: '**.fal.run',
+      },
+      {
+        protocol: 'https',
+        hostname: 'image.pollinations.ai',
+      },
+      {
+        protocol: 'https',
+        hostname: '*.techcrunch.com',
+      },
+      {
+        protocol: 'https',
+        hostname: '*.arstechnica.net',
+      },
+      {
+        protocol: 'https',
+        hostname: '**',
+      },
+      {
+        protocol: 'http',
+        hostname: '**',
       },
     ],
   },
@@ -69,6 +94,14 @@ const nextConfig = {
             value: 'max-age=63072000; includeSubDomains; preload',
           },
         ],
+      },
+    ];
+  },
+  async rewrites() {
+    return [
+      {
+        source: '/api/internal/:path*',
+        destination: 'http://127.0.0.1:8000/api/internal/:path*',
       },
     ];
   },

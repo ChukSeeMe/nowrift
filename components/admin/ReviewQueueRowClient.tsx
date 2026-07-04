@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { approveArticle, rejectArticle } from '@/app/admin/actions';
+import { getFallbackImage } from '@/lib/utils/image';
 
 interface ReviewQueueRowClientProps {
   article: {
@@ -73,7 +74,8 @@ export function ReviewQueueRowClient({ article }: ReviewQueueRowClientProps) {
   const timeInQueue = Math.max(0, Math.floor((Date.now() - new Date(article.created_at).getTime()) / (1000 * 60 * 60)));
   const timeInQueueText = timeInQueue === 0 ? 'Just now' : `${timeInQueue}h ago`;
 
-  const thumb = article.images?.[0]?.image_url || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48"><rect width="48" height="48" fill="%231A1A24"/></svg>';
+  const rawThumb = article.images?.[0]?.image_url;
+  const thumb = (rawThumb && rawThumb !== 'css_fallback') ? rawThumb : getFallbackImage(article.slug, article.headline, 48, 48);
   const sourceCount = article.sources?.length || 0;
 
   return (

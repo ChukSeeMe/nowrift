@@ -18,7 +18,7 @@ export function BreakingTicker() {
 
   const fetchBreaking = async () => {
     try {
-      const res = await fetch('/api/v1/articles?breaking=true');
+      const res = await fetch('/api/v1/breaking');
       if (res.ok) {
         const data = await res.json();
         setArticles(data.articles || []);
@@ -37,18 +37,27 @@ export function BreakingTicker() {
   if (articles.length === 0) return null;
 
   // Duplicate list to achieve seamless infinite looping
-  const scrolledItems = [...articles, ...articles];
+  // (need at least enough content to fill 2x the viewport width)
+  const scrolledItems = articles.length < 5
+    ? [...articles, ...articles, ...articles]
+    : [...articles, ...articles];
 
   return (
-    <div className="w-full h-10 bg-surface border-b border-border/80 overflow-hidden flex items-center relative z-30 select-none">
+    <div className="breaking-ticker w-full h-10 bg-surface border-b border-border/80 overflow-hidden flex items-center relative z-30 select-none">
       {/* Pinned Red Label */}
       <div className="h-full px-4 flex items-center bg-rift-red text-near-black font-extrabold text-label tracking-wider shrink-0 z-10 shadow-lg shadow-near-black">
-        ⚡ BREAKING
+        <span className="ticker-dot" /> BREAKING
       </div>
+
 
       {/* Scrolling Area */}
       <div className="flex-1 h-full overflow-hidden relative">
-        <div className="animate-ticker flex items-center h-full">
+        <div
+          className="animate-ticker flex items-center h-full"
+          style={{
+            animation: `ticker ${Math.max(20, scrolledItems.length * 6)}s linear infinite`
+          }}
+        >
           {scrolledItems.map((article, idx) => (
             <Link
               key={`${article.slug}-${idx}`}

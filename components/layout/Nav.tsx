@@ -29,8 +29,11 @@ export function Nav() {
   }, [pathname]);
 
   const navLinks = [
-    { name: 'News Feed', href: '/' },
-    { name: 'Grants Hub', href: '/grants' },
+    { name: 'Feed', href: '/' },
+    { name: 'Deep Dives', href: '/deep-dives' },
+    { name: 'Grants', href: '/grants' },
+    { name: 'Community', href: '/community' },
+    { name: 'Tools', href: '/tools' },
     { name: 'Newsletter', href: '/newsletter' },
   ];
 
