@@ -64,6 +64,31 @@ const nextConfig = {
       },
     ],
   },
+  async redirects() {
+    return [
+      // Redirect www to apex
+      {
+        source: '/:path*',
+        has: [{ type: 'host', value: 'www.nowrift.com' }],
+        destination: 'https://nowrift.com/:path*',
+        permanent: true,
+      },
+      // Redirect .io to .com
+      {
+        source: '/:path*',
+        has: [{ type: 'host', value: 'nowrift.io' }],
+        destination: 'https://nowrift.com/:path*',
+        permanent: true,
+      },
+      // Redirect .tech to .com
+      {
+        source: '/:path*',
+        has: [{ type: 'host', value: 'nowrift.tech' }],
+        destination: 'https://nowrift.com/:path*',
+        permanent: true,
+      },
+    ];
+  },
   async headers() {
     return [
       {
@@ -92,6 +117,10 @@ const nextConfig = {
           {
             key: 'Strict-Transport-Security',
             value: 'max-age=63072000; includeSubDomains; preload',
+          },
+          {
+            key: 'X-Robots-Tag',
+            value: 'index, follow',
           },
         ],
       },

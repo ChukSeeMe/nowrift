@@ -14,15 +14,17 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     select: { slug: true, updated_at: true },
   });
 
+  const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://nowrift.com';
+
   const articleUrls = articles.map(a => ({
-    url: `https://nowrift.com/${a.slug}`,
+    url: `${BASE_URL}/${a.slug}`,
     lastModified: a.updated_at,
     changeFrequency: 'daily' as const,
     priority: 0.8,
   }));
 
   const grantUrls = grants.map(g => ({
-    url: `https://nowrift.com/grants/${g.slug}`,
+    url: `${BASE_URL}/grants/${g.slug}`,
     lastModified: g.updated_at,
     changeFrequency: 'weekly' as const,
     priority: 0.7,
@@ -30,19 +32,19 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   return [
     {
-      url: 'https://nowrift.com',
+      url: BASE_URL,
       lastModified: new Date(),
       changeFrequency: 'hourly',
       priority: 1,
     },
     {
-      url: 'https://nowrift.com/grants',
+      url: `${BASE_URL}/grants`,
       lastModified: new Date(),
       changeFrequency: 'daily',
       priority: 0.9,
     },
     {
-      url: 'https://nowrift.com/deep-dives',
+      url: `${BASE_URL}/deep-dives`,
       lastModified: new Date(),
       changeFrequency: 'weekly',
       priority: 0.8,

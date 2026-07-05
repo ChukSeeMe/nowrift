@@ -18,6 +18,9 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_SITE_URL || 'https://nowrift.com'
+  ),
   title: "NowRift — AI & Technology News Platform",
   description: "AI-synthesized daily tech and AI news, segmented by audience channel, with open tech funding opportunities.",
   manifest: "/manifest.json",
