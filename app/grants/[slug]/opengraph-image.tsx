@@ -1,7 +1,7 @@
 import { ImageResponse } from 'next/og';
 import prisma from '@/lib/db/prisma';
 
-export const runtime = 'edge';
+export const runtime = 'nodejs';
 
 export const alt = 'NowRift Grant';
 export const size = {
