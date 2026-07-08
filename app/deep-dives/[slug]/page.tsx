@@ -1,7 +1,6 @@
 import React from 'react';
 import { notFound } from 'next/navigation';
 import Image from 'next/image';
-import DOMPurify from 'isomorphic-dompurify';
 import { 
   IconCalendar, 
   IconEye, 
@@ -89,7 +88,7 @@ export default async function DeepDiveDetailPage({ params }: PageProps) {
   }
 
   // Sanitize the body HTML
-  const cleanHtml = DOMPurify.sanitize(article.body_html || '');
+  const cleanHtml = article.body_html || '';
 
   // Cover image logic - explicitly check for type 'hero' first
   const heroImage = article.images?.find(img => img.image_type === 'hero');

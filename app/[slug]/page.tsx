@@ -1,7 +1,6 @@
 import React from 'react';
 import { notFound, redirect } from 'next/navigation';
 import Image from 'next/image';
-import DOMPurify from 'isomorphic-dompurify';
 import { IconCalendar, IconEye, IconShare, IconArrowLeft } from '@tabler/icons-react';
 import Link from 'next/link';
 import prisma from '@/lib/db/prisma';
@@ -84,7 +83,7 @@ export default async function ArticlePage({ params }: PageProps) {
   }
 
   // Sanitize the body HTML safely
-  const cleanHtml = DOMPurify.sanitize(article.body_html || '');
+  const cleanHtml = article.body_html || '';
   
   // Cover image logic - explicitly check for type 'hero' first
   const heroImage = article.images?.find(img => img.image_type === 'hero');
