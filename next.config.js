@@ -26,6 +26,7 @@ const nextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
+  serverExternalPackages: ['isomorphic-dompurify'],
   images: {
     unoptimized: true,
     minimumCacheTTL: 60,
