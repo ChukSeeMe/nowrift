@@ -128,19 +128,12 @@ export function DeepDivesClient({ articles }: DeepDivesClientProps) {
           <div className="lg:w-1/2 p-8 sm:p-10 flex flex-col justify-center gap-6">
             <div className="flex flex-wrap items-center gap-3">
               {getFormatBadge(featuredArticle.deep_dive_format)}
-              <span className="flex items-center gap-1 text-[11px] font-bold text-muted uppercase tracking-wider">
-                {featuredArticle.is_human_authored ? (
-                  <span className="flex items-center gap-1 text-dev-blue">
-                    <IconUser size={12} />
-                    Human Authored
-                  </span>
-                ) : (
-                  <span className="flex items-center gap-1 text-purple-400">
-                    <IconSparkles size={12} />
-                    AI Synthesized
-                  </span>
-                )}
-              </span>
+              {featuredArticle.is_human_authored && (
+                <span className="flex items-center gap-1 text-[11px] font-bold text-dev-blue uppercase tracking-wider">
+                  <IconUser size={12} />
+                  Human Authored
+                </span>
+              )}
             </div>
 
             <div className="space-y-3">
@@ -198,9 +191,11 @@ export function DeepDivesClient({ articles }: DeepDivesClientProps) {
                   <div className="space-y-3">
                     <div className="flex items-center justify-between gap-2">
                       {getFormatBadge(art.deep_dive_format)}
-                      <span className="text-[10px] font-mono text-muted uppercase">
-                        {art.is_human_authored ? 'Human' : 'AI'}
-                      </span>
+                      {art.is_human_authored && (
+                        <span className="text-[10px] font-mono text-dev-blue uppercase font-bold">
+                          Human
+                        </span>
+                      )}
                     </div>
                     <Link href={`/deep-dives/${art.slug}`}>
                       <h4 className="text-display-m font-bold text-off-white hover:text-rift-red transition-colors cursor-pointer line-clamp-2 leading-snug">

@@ -21,9 +21,17 @@ export const metadata: Metadata = {
   metadataBase: new URL(
     process.env.NEXT_PUBLIC_SITE_URL || 'https://nowrift.com'
   ),
-  title: "NowRift — AI & Technology News Platform",
-  description: "AI-synthesized daily tech and AI news, segmented by audience channel, with open tech funding opportunities.",
+  title: "NowRift — Software & Technology News Platform",
+  description: "Daily tech and software industry news, segmented by audience channel, with open technology funding opportunities.",
   manifest: "/manifest.json",
+  icons: {
+    icon: [
+      { url: '/favicon.ico', sizes: '48x48', type: 'image/x-icon' },
+      { url: '/favicon.svg', type: 'image/svg+xml' },
+    ],
+    apple: '/favicon.png',
+    shortcut: '/favicon.ico',
+  },
 };
 
 export default function RootLayout({

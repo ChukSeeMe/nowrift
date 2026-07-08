@@ -10,7 +10,6 @@ import BreakingTicker from '@/components/layout/BreakingTicker';
 import Footer from '@/components/layout/Footer';
 import ChannelTag from '@/components/articles/ChannelTag';
 import SoWhatBox from '@/components/articles/SoWhatBox';
-import AigenAuditPill from '@/components/articles/AigenAuditPill';
 import { getFallbackImage } from '@/lib/utils/image';
 import Favicon from '@/components/ui/Favicon';
 import ArticleImage from '@/components/articles/ArticleImage';
@@ -159,7 +158,7 @@ export default async function ArticlePage({ params }: PageProps) {
           )}
 
           <div className="text-label text-muted font-mono py-2 border-y border-border/40">
-            Synthesised from {article.sources.length} sources · <span className="text-grant-green">AIGen Audit: verified</span>
+            By <span className="text-off-white font-bold">NowRift Editorial</span>
           </div>
         </header>
 
@@ -251,43 +250,7 @@ export default async function ArticlePage({ params }: PageProps) {
             </section>
           )}
 
-          {/* Expanded AI Gen Audit Box */}
-          {article.audit_record && (
-            <section className="max-w-[720px] mx-auto w-full mt-10 p-6 rounded-xl bg-surface border border-border/60">
-              <h3 className="text-label text-muted font-mono mb-4">AIGen Audit Verification Report</h3>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-6 text-label text-muted font-mono">
-                <div className="flex flex-col gap-1.5">
-                  <span className="text-[10px] uppercase text-muted">Synthesis Model</span>
-                  <span className="text-[12px] font-bold text-off-white">{article.audit_record.model_used}</span>
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  <span className="text-[10px] uppercase text-muted">Synthesis Date</span>
-                  <span className="text-[12px] font-bold text-off-white">
-                    {new Date(article.audit_record.ingested_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                  </span>
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  <span className="text-[10px] uppercase text-muted">Source Count</span>
-                  <span className="text-[12px] font-bold text-off-white">{article.audit_record.source_count} Sources</span>
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  <span className="text-[10px] uppercase text-muted">Similarity Match</span>
-                  <span className={`text-[12px] font-bold ${
-                    article.audit_record.max_similarity_score < 0.10 ? "text-grant-green" :
-                    article.audit_record.max_similarity_score < 0.15 ? "text-sec-amber" : "text-rift-red"
-                  }`}>
-                    {Math.round(article.audit_record.max_similarity_score * 100)}% Max
-                  </span>
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  <span className="text-[10px] uppercase text-muted">Copyright Status</span>
-                  <span className={`text-[12px] font-bold ${article.audit_record.copyright_passed ? "text-grant-green" : "text-rift-red"}`}>
-                    {article.audit_record.copyright_passed ? "VERIFIED" : "WARNING"}
-                  </span>
-                </div>
-              </div>
-            </section>
-          )}
+
 
         </div>
       </main>

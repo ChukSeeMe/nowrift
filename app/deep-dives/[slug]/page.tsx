@@ -18,7 +18,6 @@ import Nav from '@/components/layout/Nav';
 import BreakingTicker from '@/components/layout/BreakingTicker';
 import Footer from '@/components/layout/Footer';
 import ChannelTag from '@/components/articles/ChannelTag';
-import AigenAuditPill from '@/components/articles/AigenAuditPill';
 import { getFallbackImage } from '@/lib/utils/image';
 import ArticleImage from '@/components/articles/ArticleImage';
 import BodyImageErrorListener from '@/components/articles/BodyImageErrorListener';
@@ -157,15 +156,10 @@ export default async function DeepDiveDetailPage({ params }: PageProps) {
         <header className="flex flex-col gap-4">
           <div className="flex items-center gap-3">
             <ChannelTag name={formatConfig.name} colorHex={formatConfig.color} />
-            {article.is_human_authored ? (
+            {article.is_human_authored && (
               <span className="flex items-center gap-1 text-[11px] font-bold text-dev-blue uppercase tracking-wider">
                 <IconUser size={12} />
                 Human Authored
-              </span>
-            ) : (
-              <span className="flex items-center gap-1 text-[11px] font-bold text-purple-400 uppercase tracking-wider">
-                <IconSparkles size={12} />
-                AI Synthesized
               </span>
             )}
           </div>
@@ -320,22 +314,7 @@ export default async function DeepDiveDetailPage({ params }: PageProps) {
             </div>
           )}
 
-          {/* AI Audit Record Pill (Absent on human-authored pieces) */}
-          {!article.is_human_authored && (
-            <div className="flex items-center justify-between gap-4 p-4 rounded-xl bg-surface border border-border/60 mt-4">
-              <div className="flex flex-col gap-1">
-                <span className="text-[10px] font-mono uppercase tracking-wider text-muted">AI Synthesis Model</span>
-                <span className="text-body-m font-bold text-off-white">
-                  {article.audit_record?.model_used || (article.deep_dive_format === 'report' ? 'gemini-3.5-flash' : 'gemini-2.5-flash')}
-                </span>
-              </div>
-              <AigenAuditPill
-                similarityScore={article.audit_record?.max_similarity_score ?? 0.12}
-                copyrightPassed={article.audit_record?.copyright_passed ?? true}
-                sourceCount={referencedArticles.length || article.audit_record?.source_count || 3}
-              />
-            </div>
-          )}
+
 
         </div>
       </main>
