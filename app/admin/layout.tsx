@@ -14,10 +14,7 @@ export default async function AdminLayout({
     redirect('/login');
   }
 
-  const isAdminRole = ['admin', 'super_admin'].includes(session.role);
-  if (isAdminRole && !session.totp_enabled && process.env.NODE_ENV === 'production') {
-    redirect('/admin/setup-2fa');
-  }
+
 
   return (
     <AdminSessionProvider session={session}>
