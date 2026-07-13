@@ -47,6 +47,7 @@ enum ImageProvider {
   pollinations
   css_fallback
   manual_upload
+  azure_blob
 
   @@map("image_provider")
 }
@@ -490,6 +491,7 @@ model ArticleSource {
   source_domain    String?  @db.VarChar(255)
   similarity_score Float?
   was_primary      Boolean  @default(false)
+  raw_og_image     String?
   scraped_at       DateTime @default(now()) @db.Timestamptz
 
   // Relations

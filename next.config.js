@@ -32,6 +32,10 @@ const nextConfig = {
     remotePatterns: [
       {
         protocol: 'https',
+        hostname: 'nowriftimages.blob.core.windows.net',
+      },
+      {
+        protocol: 'https',
         hostname: '**.fal.media',
       },
       {
