@@ -66,6 +66,7 @@ enum AgentName {
   social_trend
   social_strategy
   tool_discoverer
+  token_refresher
 
   @@map("agent_name")
 }
