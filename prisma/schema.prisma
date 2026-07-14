@@ -94,6 +94,7 @@ enum SocialPlatform {
   x
   linkedin
   threads
+  facebook
 
   @@map("social_platform")
 }
