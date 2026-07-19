@@ -16,6 +16,7 @@ import ArticleImage from '@/components/articles/ArticleImage';
 import BodyImageErrorListener from '@/components/articles/BodyImageErrorListener';
 import { cachedQuery } from '@/lib/cache/queries';
 import { CACHE_TTL } from '@/lib/cache/ttl';
+import { getSocialIcon } from '@/components/layout/SocialLinks';
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -249,8 +250,48 @@ export default async function ArticlePage({ params }: PageProps) {
               </ul>
             </section>
           )}
-
-
+          {/* Share Article Section */}
+          {(() => {
+            const articleUrl = `https://nowrift.com/${article.slug}`;
+            const shareText = encodeURIComponent(article.headline);
+            const shareUrl = encodeURIComponent(articleUrl);
+            const shareLinks = [
+              {
+                name: 'Threads',
+                url: `https://www.threads.net/intent/post?text=${shareText}%20${shareUrl}`,
+                icon: 'threads'
+              },
+              {
+                name: 'LinkedIn',
+                url: `https://www.linkedin.com/sharing/share-offsite/?url=${shareUrl}`,
+                icon: 'linkedin'
+              },
+              {
+                name: 'X',
+                url: `https://x.com/intent/tweet?text=${shareText}&url=${shareUrl}`,
+                icon: 'x'
+              }
+            ];
+            return (
+              <section className="max-w-[720px] mx-auto w-full mt-8 pt-6 border-t border-border/40 flex flex-col sm:flex-row items-center justify-between gap-4">
+                <span className="text-label text-muted font-mono uppercase tracking-wider">Share this article</span>
+                <div className="flex items-center gap-3">
+                  {shareLinks.map((link) => (
+                    <a
+                      key={link.name}
+                      href={link.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-border/60 bg-surface text-body-s font-medium text-off-white hover:text-rift-red hover:border-rift-red/40 transition-colors"
+                    >
+                      {getSocialIcon(link.icon)}
+                      <span>{link.name}</span>
+                    </a>
+                  ))}
+                </div>
+              </section>
+            );
+          })()}
 
         </div>
       </main>

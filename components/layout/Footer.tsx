@@ -1,6 +1,7 @@
 import React from 'react';
 import Link from 'next/link';
 import Logo from '../ui/Logo';
+import { SOCIAL_LINKS, getSocialIcon } from './SocialLinks';
 
 export function Footer() {
   return (
@@ -11,6 +12,20 @@ export function Footer() {
           <p className="text-body-m text-muted max-w-xs leading-relaxed">
             The dark-mode-first AI and tech news engine delivering synthesized industry insights.
           </p>
+          <div className="flex items-center gap-4 mt-2">
+            {SOCIAL_LINKS.map((link) => (
+              <a
+                key={link.name}
+                href={link.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-muted hover:text-rift-red transition-colors"
+                title={link.name}
+              >
+                {getSocialIcon(link.icon)}
+              </a>
+            ))}
+          </div>
         </div>
 
         <div className="flex flex-col gap-3">

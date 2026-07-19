@@ -1,6 +1,6 @@
 import React from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
+import { ArticleImage } from './ArticleImage';
 import { IconRosetteFilled, IconFileText } from '@tabler/icons-react';
 import ChannelTag from './ChannelTag';
 import SoWhatBox from './SoWhatBox';
@@ -77,12 +77,12 @@ export function ArticleCard({ article, className = '' }: ArticleCardProps) {
   return (
     <article className={`p-4 bg-surface border border-border rounded-xl flex gap-4 hover:border-border/80 transition-all ${className}`}>
       <div className="w-[88px] h-[88px] relative shrink-0 rounded-lg overflow-hidden bg-near-black border border-border/40">
-        <Image
-          src={thumbnail}
+        <ArticleImage
+          src={rawUrl && rawUrl !== 'css_fallback' ? rawUrl : ''}
           alt={altText}
-          fill
-          className="object-cover"
-          sizes="88px"
+          className="object-cover w-full h-full"
+          width={88}
+          height={88}
         />
       </div>
 

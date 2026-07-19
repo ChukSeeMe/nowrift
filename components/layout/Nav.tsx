@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { IconMenu2, IconX, IconSearch } from '@tabler/icons-react';
 import Logo from '../ui/Logo';
+import { SOCIAL_LINKS, getSocialIcon } from './SocialLinks';
 
 export function Nav() {
   const [isOpen, setIsOpen] = useState(false);
@@ -72,6 +73,21 @@ export function Nav() {
           </nav>
 
           <div className="hidden md:flex items-center gap-4">
+            <div className="flex items-center gap-3">
+              {SOCIAL_LINKS.map((link) => (
+                <a
+                  key={link.name}
+                  href={link.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-muted hover:text-rift-red transition-colors p-1"
+                  title={link.name}
+                >
+                  {getSocialIcon(link.icon)}
+                </a>
+              ))}
+            </div>
+            <div className="w-[1px] h-4 bg-border/80 mx-1" />
             <Link
               href="/search"
               className="text-muted hover:text-off-white transition-colors p-2"
@@ -140,10 +156,24 @@ export function Nav() {
             <Link
               href="/newsletter"
               onClick={() => setIsOpen(false)}
-              className="w-full text-center block px-4 py-2.5 text-label font-bold tracking-wider uppercase text-near-black bg-off-white hover:bg-off-white/90 rounded-lg transition-colors"
+              className="w-full text-center block px-4 py-2.5 text-label font-bold tracking-wider uppercase text-near-black bg-off-white hover:bg-off-white/90 rounded-lg transition-colors mb-3"
             >
               Subscribe
             </Link>
+          </div>
+          <div className="pt-3 border-t border-border/40 flex items-center justify-around">
+            {SOCIAL_LINKS.map((link) => (
+              <a
+                key={link.name}
+                href={link.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-muted hover:text-rift-red transition-colors p-2"
+                title={link.name}
+              >
+                {getSocialIcon(link.icon)}
+              </a>
+            ))}
           </div>
         </div>
       )}
